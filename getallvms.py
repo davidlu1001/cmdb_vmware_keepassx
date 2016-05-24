@@ -67,7 +67,12 @@ def main():
     args = cli.get_args()
 
     try:
-        # Disabling SSL certificate verification
+        '''
+        Fork from 'pyvmomi-community-samples/samples'
+        Disabling SSL certificate verification
+        in case of error:
+        "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:590)"
+        '''
         import ssl
         context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         context.verify_mode = ssl.CERT_NONE
