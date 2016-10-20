@@ -26,7 +26,6 @@ from pyVmomi import vim
 
 import tools.cli as cli
 import csv
-import string
 
 
 list_vms = []
@@ -94,9 +93,10 @@ def list_vm_info(virtual_machine):
         ip_address = summary.guest.ipAddress
         hostName = summary.guest.hostName
         tools_version = summary.guest.toolsStatus
-    list_vm = [name.title(), ip_address, hostName, template, path, mem, cpu_number,
-               guest_id, guest_name, instance_UUID, bios_UUID,
-               annotation, state, tools_version]
+    if state is 'poweredOn' and template is 'FALSE':
+        list_vm = [name.title(), ip_address, hostName, template, path, mem,
+                   cpu_number, guest_id, guest_name, instance_UUID,
+                   bios_UUID, annotation, state, tools_version]
     return list_vm
 
 def main():
