@@ -8,6 +8,9 @@ from pyVim import connect
 from pyVmomi import vim
 from colorama import init, Fore, Back, Style
 
+from datetime import datetime
+from dateutil import tz
+
 """
 Please make sure the config file 'vmware.yml'
 does exist in the following places:
@@ -21,7 +24,18 @@ GLOBAL_KEY_FILE = '/etc/vmware.yml'
 USER_KEY_FILE = os.path.join(os.environ['HOME'], '.vmware.yml')
 LOG_FILE = '/var/log/vmware.log'
 
+# UTC to GMT +13
+# METHOD 1: Hardcode zones:
+from_zone = tz.gettz('UTC')
+to_zone = tz.gettz('Pacific/Auckland')
 
+# METHOD 2: Auto-detect zones:
+#from_zone = tz.tzutc()
+#to_zone = tz.tzlocal()
+
+#########
+
+#eventType = {'Relocated':'VmRelocatedEvent','DrsVmMigrate':'DrsVmMigratedEvent','VmMigrated':'VmMigratedEvent'}
 eventType = {'Relocated':'VmRelocatedEvent','DrsVmMigrate':'DrsVmMigratedEvent','VmMigrated':'VmMigratedEvent','Reboot':'VmGuestRebootEvent','Shutdown':'VmGuestShutdownEvent'}
 
 #if args.event not in eventType.keys():
@@ -38,7 +52,6 @@ def main():
     #parser.add_argument("event", help="Event type: Relocated, DrsVmMigrate, VmMigrated", metavar="EventType")
     args = parser.parse_args()
     config = get_configuration()
-
 
     content = None
     found = None
@@ -65,8 +78,10 @@ def main():
 
         for v in h.vm:
             if (args.vm == v.summary.config.name):
-                print("\r\n[*] Virtual Machine \033[32m {} \033[0mis located on ESXi: \033[32m{}\033[0m and hosted on datastore: \033[32m{}\033[0m"\
-                      .format(v.summary.config.name,h.summary.config.name,v.datastore[0].summary.name))
+#                print("\r\n[*] Virtual Machine \033[32m {} \033[0mis located on ESXi: \033[32m{}\033[0m and hosted on datastore: \033[32m{}\033[0m"\
+#                      .format(v.summary.config.name,h.summary.config.name,v.datastore[0].summary.name))
+                print("\r\n[*] Virtual Machine \033[32m {} \033[0mis located on ESXi: \033[32m{}\033[0m"\
+                      .format(v.summary.config.name,h.summary.config.name))
 
 		for evt in eventType:
 			eMgrRef = content.eventManager
@@ -80,7 +95,12 @@ def main():
 			#print("[* {} *] Events count : \033[32m{}\033[0m".format(evt, len(event_res)))
 			print("[{}] Events count : \033[32m{}\033[0m".format(evt, len(event_res)))
 			for e in event_res:
-			    print("[{:%Y-%m-%d %H:%M:%S}] [{}] [{}] [{}]".format(e.createdTime, v.summary.config.name, evt, e.fullFormattedMessage))
+#			    print("[* {} *]: [* {} *] [{}] \033[32m@\033[0m [{:%Y-%m-%d %H:%M:%S}]".format(v.summary.config.name, evt, e.fullFormattedMessage, e.createdTime))
+#			    print("[{}]: [{}] [{}] \033[32m@\033[0m [{:%Y-%m-%d %H:%M:%S}]".format(v.summary.config.name, evt, e.fullFormattedMessage, e.createdTime))
+#			    print("[{:%Y-%m-%d %H:%M:%S}] [{}] [{}] [{}]".format(e.createdTime, v.summary.config.name, evt, e.fullFormattedMessage))
+                            e_utc = e.createdTime.replace(tzinfo=from_zone)
+                            e_central = e_utc.astimezone(to_zone)
+			    print("[{:%Y-%m-%d %H:%M:%S}] [{}] [{}]".format(e_central, v.summary.config.name, evt))
 			found = True
 			#break
 			continue
